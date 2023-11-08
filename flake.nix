@@ -59,7 +59,7 @@
         });
 
         regexes =
-          [ ".*.cabal$" "^src.*" "^main.*" "^Setup.hs$" "^js.*" "LICENSE" ];
+          [ ".*.cabal$" "^src.*" "^main.*" "^Setup.hs$" "^js.*" "LICENSE" "^include.*" ];
         src = builtins.path {
           path = ./.;
           name = "nixfmt-src";
@@ -82,6 +82,20 @@
             cp ${nixfmt-js}/bin/js-interface.jsexe/{rts,lib,out,runmain}.js $out
             substituteInPlace $out/index.html --replace ../dist/build/js-interface/js-interface.jsexe/ ./
           '';
+
+          nixfmt-flib = pkgs.stdenv.mkDerivation {
+            pname = "nixfmt-flib";
+            version = nixfmt.version;
+            inherit src;
+
+            propagatedBuildInputs = [ nixfmt ];
+
+            installPhase = ''
+              mkdir -p $out
+              ln -s $(find ${nixfmt} -name include) $out/include
+              ln -s ${nixfmt}/lib/ghc-${nixfmt.passthru.compiler.version} $out/lib
+            '';
+          };
 
           nixfmt-shell = nixfmt.env.overrideAttrs (oldAttrs: {
             buildInputs = oldAttrs.buildInputs ++ (with pkgs; [

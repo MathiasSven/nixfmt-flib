@@ -1,4 +1,4 @@
-cabal-version:       2.0
+cabal-version:       2.2
 
 -- © 2022 Serokell <hi@serokell.io>
 -- © 2022 Lars Jellema <lars.jellema@gmail.com>
@@ -60,19 +60,10 @@ executable nixfmt
     -Wredundant-constraints
     -threaded
 
-library
-  exposed-modules:
-    Nixfmt
-    Nixfmt.Lexer
-    Nixfmt.Parser
-    Nixfmt.Parser.Float
-    Nixfmt.Predoc
-    Nixfmt.Pretty
-    Nixfmt.Types
-    Nixfmt.Util
-
+common common-libs
   default-extensions:
     PackageImports
+    ForeignFunctionInterface
 
   other-extensions:
     DeriveFoldable
@@ -99,6 +90,37 @@ library
     -Wincomplete-uni-patterns
     -Wredundant-constraints
     -Wno-orphans
+    -stubdir include
+
+library
+  import:              common-libs
+
+  exposed-modules:
+    Nixfmt
+    Nixfmt.Lexer
+    Nixfmt.Parser
+    Nixfmt.Parser.Float
+    Nixfmt.Predoc
+    Nixfmt.Pretty
+    Nixfmt.Types
+    Nixfmt.Util
+
+foreign-library nixfmt-flib
+  import:              common-libs
+
+  type:                native-shared
+  include-dirs:        include
+  install-includes:    Nixfmt_stub.h
+
+  other-modules:
+    Nixfmt
+    Nixfmt.Lexer
+    Nixfmt.Parser
+    Nixfmt.Parser.Float
+    Nixfmt.Predoc
+    Nixfmt.Pretty
+    Nixfmt.Types
+    Nixfmt.Util
 
 executable js-interface
   main-is: JSInterface.hs

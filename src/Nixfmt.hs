@@ -22,6 +22,20 @@ import Nixfmt.Predoc (layout)
 import Nixfmt.Pretty ()
 import Nixfmt.Types (ParseErrorBundle)
 
+import Data.Text (pack, unpack)
+import Data.Either (either)
+import Foreign.C.String (CString)
+import GHC.Foreign (peekCString, newCString)
+import System.IO (utf8)
+
+foreign export ccall fformat :: CString -> IO CString
+
+fformat :: CString -> IO CString
+fformat cs = do
+  hstr <- peekCString utf8 cs
+  let res = either id unpack (format 100 "Repl" (pack hstr))
+  newCString utf8 res
+
 type Width = Int
 
 -- | @format w filename source@ returns either a parsing error specifying a
