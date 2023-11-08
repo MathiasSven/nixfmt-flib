@@ -90,10 +90,23 @@
 
             propagatedBuildInputs = [ nixfmt ];
 
+            # do I still need to use find here?
             installPhase = ''
               mkdir -p $out
               ln -s $(find ${nixfmt} -name include) $out/include
               ln -s ${nixfmt}/lib/ghc-${nixfmt.passthru.compiler.version} $out/lib
+            '';
+          };
+
+          # this is a hack, it shouldn't even be here even it wasn't, but it is easier on the nix side
+          ghc-from-c = pkgs.stdenv.mkDerivation {
+            pname = "ghc-from-c";
+            version = "0";
+            phases = [ "installPhase" ];
+            installPhase = ''
+              mkdir -p $out
+              ln -s ${nixfmt.passthru.compiler}/lib/ghc-${nixfmt.passthru.compiler.version}/rts/include $out/include
+              ln -s ${nixfmt.passthru.compiler}/lib/ghc-${nixfmt.passthru.compiler.version}/rts/ $out/lib
             '';
           };
 
