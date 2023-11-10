@@ -23,7 +23,7 @@ import Nixfmt.Types
   (Ann(..), Binder(..), Expression(..), File(..), Leaf, ParamAttr(..),
   Parameter(..), Selector(..), SimpleSelector(..), StringPart(..), Term(..),
   Token(..), TrailingComment(..), Trivia, Trivium(..), tokenText, Unshowables (..), Location (..))
-import Nixfmt.Util (commonIndentation, isSpaces, replaceMultiple)
+import Nixfmt.Util (commonIndentation, isSpaces, replaceMultiple, Color(..), colorize)
 
 prettyCommentLine :: Text -> Doc
 prettyCommentLine l
@@ -118,18 +118,18 @@ prettyTerm (Parenthesized (Ann paropen trailing leading) expr parclose)
     = base $ pretty paropen <> pretty trailing
         <> nest 2 (pretty leading <> group expr) <> pretty parclose
 
-prettyTerm (Unshowable unshowopen PrimOp unshowclose)
-    = base $ pretty unshowopen <> pretty (pack "primop") <> pretty unshowclose
-
-prettyTerm (Unshowable unshowopen Repeated unshowclose)
-    = base $ pretty unshowopen <> pretty (pack "repeated") <> pretty unshowclose
-
-prettyTerm (Unshowable unshowopen (Lambda path (Location l p)) unshowclose)
-    = base $ pretty unshowopen <> pretty (pack "lambda @ ") 
-   <> pretty path <> pretty (pack $ ":" <> show l <> ":" <> show p) <> pretty unshowclose
-
-prettyTerm (Unshowable unshowopen (Derivation path) unshowclose)
-    = base $ pretty unshowopen <> pretty (pack "derivation ") <> pretty path <> pretty unshowclose
+prettyTerm (Unshowable unshowopen unshowalbe unshowclose)
+    = let wrap :: Color -> Doc -> Doc
+          wrap c d = colorize c $ base $ pretty unshowopen <> d <> pretty unshowclose
+       in case unshowalbe of 
+            PrimOp -> wrap MAGENTA $ pretty (pack "primop")
+            PrimOpApp -> wrap BLUE $ pretty (pack "primop-app")
+            Repeated -> wrap NORMAL $ pretty (pack "repeated")
+            Unknown -> wrap RED $ pretty (pack "unknown")
+            Lambda path (Location l p) -> wrap BLUE $ pretty (pack "lambda @ ") <> pretty path <> 
+              pretty (pack $ ":" <> show l <> ":" <> show p)
+            Derivation path -> wrap NORMAL $ pretty (pack "derivation ") <> pretty path
+            Error msg -> wrap RED $ pretty (pack "derivation ") <> pretty msg
 
 
 instance Pretty Term where
@@ -272,7 +272,10 @@ instance Pretty File where
                   <> hcat leading <> pretty expr <> hardline
 
 instance Pretty Token where
-    pretty = text . tokenText
+    pretty (Identifier t) 
+      | t `elem` [pack "null", pack "true", pack "false"] = text . colorize CYAN $ t
+    pretty x@(Integer _) = text . colorize CYAN $ tokenText x
+    pretty x = text $ tokenText x
 
 instance Pretty [Token] where
     pretty = hcat
@@ -391,7 +394,7 @@ prettyLine escapeText unescapeInterpol
           unescapeInterpols (x : xs) = x : unescapeInterpols xs
 
 prettySimpleString :: [[StringPart]] -> Doc
-prettySimpleString parts = group $
+prettySimpleString parts = group $ colorize MAGENTA $
     text "\""
     <> sepBy (text "\\n") (map (prettyLine escape unescapeInterpol) parts)
     <> text "\""

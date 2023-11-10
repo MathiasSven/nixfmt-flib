@@ -35,6 +35,7 @@ module Nixfmt.Predoc
 
 import Data.List (intersperse)
 import Data.Text as Text (Text, concat, length, pack, replicate)
+import Nixfmt.Util (Colorizable(..), Color(NORMAL))
 
 -- | Sequential Spacings are reduced to a single Spacing by taking the maximum.
 -- This means that e.g. a Space followed by an Emptyline results in just an
@@ -289,3 +290,6 @@ layoutGreedy tw doc = Text.concat $ go 0 0 [Chunk 0 $ Node Group doc]
                 case fits (tw - cc - firstLineWidth (map unChunk xs)) ys of
                      Nothing     -> go cc ci $ map (Chunk ti) ys ++ xs
                      Just t      -> t : go (cc + textWidth t) ci xs
+
+instance Colorizable Doc where
+  colorize c d = text (pack (show c)) <> d <> text (pack (show NORMAL))

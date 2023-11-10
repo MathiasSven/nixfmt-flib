@@ -69,7 +69,14 @@ data Binder
 data Location = Location Int Int
     deriving (Eq, Show)
 
-data Unshowables = Repeated | PrimOp | Lambda Path Location | Derivation Path
+data Unshowables 
+  = Repeated 
+  | PrimOp 
+  | PrimOpApp 
+  | Unknown 
+  | Lambda Path Location 
+  | Derivation Path
+  | Error Text
     deriving (Eq, Show)
 
 data Term

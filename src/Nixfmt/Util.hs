@@ -5,6 +5,8 @@
  -}
 
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Nixfmt.Util
     ( manyP
@@ -20,6 +22,9 @@ module Nixfmt.Util
     , replaceMultiple
     , schemeChar
     , uriChar
+    , Color(..)
+    , Colorizable
+    , colorize
     ) where
 
 import Control.Applicative ((<|>))
@@ -28,7 +33,7 @@ import Data.Foldable (asum)
 import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Text as Text
-  (Text, all, commonPrefixes, concat, empty, null, splitAt, stripEnd, stripPrefix, takeWhile)
+  (Text, all, commonPrefixes, concat, empty, null, splitAt, stripEnd, stripPrefix, takeWhile, pack)
 import Text.Megaparsec
   (ParsecT, Stream, Token, Tokens, many, some, takeWhile1P, takeWhileP)
 
@@ -105,3 +110,22 @@ replaceMultiple replacements = mconcat . unfoldr replaceAny
 
     replaceStart :: Text -> (Text, Text) -> Maybe (Text, Text)
     replaceStart t (pat, rep) = (rep,) <$> Text.stripPrefix pat t
+
+data Color = CYAN | GREEN | RED | BLUE | MAGENTA | NORMAL
+
+instance Show Color where
+    show CYAN = "\x1b[36m"
+    show GREEN = "\x1b[32m"
+    show RED = "\x1b[31m"
+    show BLUE = "\x1b[34m"
+    show MAGENTA = "\x1b[35m"
+    show NORMAL = "\x1b[0m"
+
+class Colorizable a where
+    colorize :: Color -> a -> a
+  
+instance Colorizable [Char] where
+    colorize c s = show c <> s <> show NORMAL 
+
+instance Colorizable Text where
+    colorize c s = (pack . show) c <> s <> (pack . show) NORMAL 

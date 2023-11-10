@@ -248,9 +248,12 @@ unshowable = Unshowable <$>
 
 unshowables :: Parser Unshowables
 unshowables = try (lexeme "primop" >> pure PrimOp)
+          <|> try (lexeme "primop-app" >> pure PrimOpApp)
           <|> try (lexeme "repeated" >> pure Repeated)
+          <|> try (lexeme "unknown" >> pure Unknown)
           <|> try (lexeme "lambda @ " >> Lambda <$> path <*> location)
           <|> try (lexeme "derivation " >> Derivation <$> path)
+          <|> try (lexeme "error: " >> Error <$> manyP (/= '»'))
 
 -- ABSTRACTIONS
 
