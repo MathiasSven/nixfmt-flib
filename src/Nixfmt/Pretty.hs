@@ -12,7 +12,7 @@ import Prelude hiding (String)
 
 import Data.Char (isSpace)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, isPrefixOf, isSuffixOf, stripPrefix)
+import Data.Text (Text, isPrefixOf, isSuffixOf, stripPrefix, pack)
 import qualified Data.Text as Text
   (dropEnd, empty, init, isInfixOf, last, null, strip, takeWhile)
 
@@ -22,7 +22,7 @@ import Nixfmt.Predoc
 import Nixfmt.Types
   (Ann(..), Binder(..), Expression(..), File(..), Leaf, ParamAttr(..),
   Parameter(..), Selector(..), SimpleSelector(..), StringPart(..), Term(..),
-  Token(..), TrailingComment(..), Trivia, Trivium(..), tokenText)
+  Token(..), TrailingComment(..), Trivia, Trivium(..), tokenText, Unshowables (..), Location (..))
 import Nixfmt.Util (commonIndentation, isSpaces, replaceMultiple)
 
 prettyCommentLine :: Text -> Doc
@@ -83,6 +83,8 @@ instance Pretty Binder where
         = base $ group (hcat selectors <> hardspace
                  <> nest 2 (pretty assign <> softline <> pretty expr))
           <> pretty semicolon
+    pretty (Thunk thunk)
+        = pretty thunk
 
 -- | Pretty print a term without wrapping it in a group.
 prettyTerm :: Term -> Doc
@@ -115,6 +117,20 @@ prettyTerm (Set krec (Ann paropen trailing leading) binders parclose)
 prettyTerm (Parenthesized (Ann paropen trailing leading) expr parclose)
     = base $ pretty paropen <> pretty trailing
         <> nest 2 (pretty leading <> group expr) <> pretty parclose
+
+prettyTerm (Unshowable unshowopen PrimOp unshowclose)
+    = base $ pretty unshowopen <> pretty (pack "primop") <> pretty unshowclose
+
+prettyTerm (Unshowable unshowopen Repeated unshowclose)
+    = base $ pretty unshowopen <> pretty (pack "repeated") <> pretty unshowclose
+
+prettyTerm (Unshowable unshowopen (Lambda path (Location l p)) unshowclose)
+    = base $ pretty unshowopen <> pretty (pack "lambda @ ") 
+   <> pretty path <> pretty (pack $ ":" <> show l <> ":" <> show p) <> pretty unshowclose
+
+prettyTerm (Unshowable unshowopen (Derivation path) unshowclose)
+    = base $ pretty unshowopen <> pretty (pack "derivation ") <> pretty path <> pretty unshowclose
+
 
 instance Pretty Term where
     pretty l@(List _ _ _) = group $ prettyTerm l

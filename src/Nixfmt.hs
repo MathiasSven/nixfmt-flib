@@ -13,7 +13,7 @@ module Nixfmt
     ) where
 
 import Data.Bifunctor (bimap, first)
-import Data.Text (Text)
+import Data.Text (Text, pack, unpack)
 import qualified Text.Megaparsec as Megaparsec (parse)
 import Text.Megaparsec.Error (errorBundlePretty)
 
@@ -22,8 +22,6 @@ import Nixfmt.Predoc (layout)
 import Nixfmt.Pretty ()
 import Nixfmt.Types (ParseErrorBundle)
 
-import Data.Text (pack, unpack)
-import Data.Either (either)
 import Foreign.C.String (CString)
 import GHC.Foreign (peekCString, newCString)
 import System.IO (utf8)

@@ -63,6 +63,13 @@ data Selector
 data Binder
     = Inherit Leaf (Maybe Term) [Leaf] Leaf
     | Assignment [Selector] Leaf Expression Leaf
+    | Thunk Leaf
+    deriving (Eq, Show)
+
+data Location = Location Int Int
+    deriving (Eq, Show)
+
+data Unshowables = Repeated | PrimOp | Lambda Path Location | Derivation Path
     deriving (Eq, Show)
 
 data Term
@@ -73,6 +80,7 @@ data Term
     | Set (Maybe Leaf) Leaf [Binder] Leaf
     | Selection Term [Selector]
     | Parenthesized Leaf Expression Leaf
+    | Unshowable Leaf Unshowables Leaf
     deriving (Eq, Show)
 
 data ParamAttr
@@ -130,6 +138,8 @@ data Token
     | TInterClose
     | TParenOpen
     | TParenClose
+    | TUnshowableOpen
+    | TUnshowableClose
 
     | TAssign
     | TAt
@@ -229,6 +239,8 @@ tokenText TInterOpen         = "${"
 tokenText TInterClose        = "}"
 tokenText TParenOpen         = "("
 tokenText TParenClose        = ")"
+tokenText TUnshowableOpen    = "«"
+tokenText TUnshowableClose   = "»"
 
 tokenText TAssign            = "="
 tokenText TAt                = "@"

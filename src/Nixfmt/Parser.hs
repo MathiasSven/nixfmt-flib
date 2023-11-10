@@ -16,6 +16,7 @@ import qualified Control.Monad.Combinators.Expr as MPExpr
   (Operator(..), makeExprParser)
 import Data.Char (isAlpha)
 import Data.Foldable (toList)
+import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe, mapMaybe, maybeToList)
 import Data.Text as Text (Text, cons, empty, singleton, split, stripPrefix)
 import Text.Megaparsec
@@ -28,7 +29,7 @@ import Nixfmt.Lexer (lexeme)
 import Nixfmt.Types
   (Ann, Binder(..), Expression(..), File(..), Fixity(..), Leaf, Operator(..),
   ParamAttr(..), Parameter(..), Parser, Path, Selector(..), SimpleSelector(..),
-  String, StringPart(..), Term(..), Token(..), operators, tokenText)
+  String, StringPart(..), Term(..), Token(..), operators, tokenText, Unshowables (..), Location(..))
 import Nixfmt.Parser.Float (floatParse)
 import Nixfmt.Util
   (commonIndentation, identChar, isSpaces, manyP, manyText, pathChar,
@@ -96,6 +97,9 @@ path = try $ lexeme $ fmap normalizeLine $
 uri :: Parser [[StringPart]]
 uri = fmap (pure . pure . TextPart) $ try $
     someP schemeChar <> chunk ":" <> someP uriChar
+
+location :: Parser Location
+location = chunk ":" >> (L.decimal >>= (\line -> (chunk ":" >> L.decimal) <&> Location line))
 
 -- STRINGS
 
@@ -229,7 +233,7 @@ selectorPath = (pure <$> selector Nothing) <>
 simpleTerm :: Parser Term
 simpleTerm = (String <$> string) <|> (Path <$> path) <|>
     (Token <$> (envPath <|> float <|> integer <|> identifier)) <|>
-    parens <|> set <|> list
+    parens <|> set <|> list <|> unshowable
 
 term :: Parser Term
 term = label "term" $ do
@@ -237,6 +241,16 @@ term = label "term" $ do
     s <- many $ try $ selector $ Just $ symbol TDot
     return $ case s of [] -> t
                        _  -> Selection t s
+
+unshowable :: Parser Term
+unshowable = Unshowable <$>
+    symbol TUnshowableOpen <*> unshowables <*> symbol TUnshowableClose
+
+unshowables :: Parser Unshowables
+unshowables = try (lexeme "primop" >> pure PrimOp)
+          <|> try (lexeme "repeated" >> pure Repeated)
+          <|> try (lexeme "lambda @ " >> Lambda <$> path <*> location)
+          <|> try (lexeme "derivation " >> Derivation <$> path)
 
 -- ABSTRACTIONS
 
@@ -278,14 +292,15 @@ assignment = Assignment <$>
     selectorPath <*> symbol TAssign <*> expression <*> symbol TSemicolon
 
 binders :: Parser [Binder]
-binders = many (assignment <|> inherit)
+binders = pure . Thunk <$> symbol TEllipsis <|> many (assignment <|> inherit)
 
 set :: Parser Term
 set = Set <$> optional (reserved KRec <|> reserved KLet) <*>
     symbol TBraceOpen <*> binders <*> symbol TBraceClose
 
 list :: Parser Term
-list = List <$> symbol TBrackOpen <*> many term <*> symbol TBrackClose
+list = List <$> symbol TBrackOpen <*>
+     (pure . Token <$> symbol TEllipsis <|> many term) <*> symbol TBrackClose
 
 -- OPERATORS
 
