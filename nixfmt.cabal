@@ -110,7 +110,8 @@ foreign-library nixfmt-flib
 
   type:                native-shared
   include-dirs:        include
-  install-includes:    Nixfmt_stub.h
+  c-sources:           csrc/nixfmt-flib.cc
+  install-includes:    Nixfmt_stub.h nixfmt-flib.h
 
   other-modules:
     Nixfmt

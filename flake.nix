@@ -59,7 +59,7 @@
         });
 
         regexes =
-          [ ".*.cabal$" "^src.*" "^main.*" "^Setup.hs$" "^js.*" "LICENSE" "^include.*" ];
+          [ ".*.cabal$" "^csrc.*" "^src.*" "^main.*" "^Setup.hs$" "^js.*" "LICENSE" "^include.*" ];
         src = builtins.path {
           path = ./.;
           name = "nixfmt-src";
