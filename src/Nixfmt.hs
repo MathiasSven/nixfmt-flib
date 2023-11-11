@@ -22,17 +22,15 @@ import Nixfmt.Predoc (layout)
 import Nixfmt.Pretty ()
 import Nixfmt.Types (ParseErrorBundle)
 
-import Foreign.C.String (CString)
-import GHC.Foreign (peekCString, newCString)
-import System.IO (utf8)
+import Foreign.C.String (peekCWString, newCWString, CWString)
 
-foreign export ccall fformat :: CString -> IO CString
+foreign export ccall fformat :: CWString -> IO CWString
 
-fformat :: CString -> IO CString
+fformat :: CWString -> IO CWString
 fformat cs = do
-  hstr <- peekCString utf8 cs
+  hstr <- peekCWString cs
   let res = either id unpack (format 100 "Repl" (pack hstr))
-  newCString utf8 res
+  newCWString res
 
 type Width = Int
 
