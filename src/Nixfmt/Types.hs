@@ -73,8 +73,9 @@ data Unshowables
   = Repeated 
   | PrimOp 
   | PrimOpApp 
+  | UString 
   | Unknown 
-  | Lambda Path Location 
+  | Lambda (Either Term Path) Location 
   | Derivation Path
   | Error Text
     deriving (Eq, Show)

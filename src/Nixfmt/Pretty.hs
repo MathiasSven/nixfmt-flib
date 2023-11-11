@@ -125,8 +125,11 @@ prettyTerm (Unshowable unshowopen unshowalbe unshowclose)
             PrimOp -> wrap MAGENTA $ pretty (pack "primop")
             PrimOpApp -> wrap BLUE $ pretty (pack "primop-app")
             Repeated -> wrap NORMAL $ pretty (pack "repeated")
+            UString -> base $ pretty unshowopen <> pretty (pack "string") <> pretty unshowclose
             Unknown -> wrap RED $ pretty (pack "unknown")
-            Lambda path (Location l p) -> wrap BLUE $ pretty (pack "lambda @ ") <> pretty path <> 
+            Lambda (Right path) (Location l p) -> wrap BLUE $ pretty (pack "lambda @ ") <> pretty path <> 
+              pretty (pack $ ":" <> show l <> ":" <> show p)
+            Lambda _ (Location l p) -> wrap BLUE $ pretty (pack "lambda @ ") <> text "«string»" <> 
               pretty (pack $ ":" <> show l <> ":" <> show p)
             Derivation path -> wrap NORMAL $ pretty (pack "derivation ") <> pretty path
             Error msg -> wrap RED $ pretty (pack "derivation ") <> pretty msg
@@ -134,6 +137,9 @@ prettyTerm (Unshowable unshowopen unshowalbe unshowclose)
 
 instance Pretty Term where
     pretty l@(List _ _ _) = group $ prettyTerm l
+    pretty (Token (Ann (Identifier t) trailing leading)) 
+      | t `elem` [pack "null", pack "true", pack "false"] 
+      = (text . colorize CYAN $ t) <> pretty trailing <> pretty leading
     pretty x              = prettyTerm x
 
 toLeading :: Maybe TrailingComment -> Trivia
@@ -272,8 +278,6 @@ instance Pretty File where
                   <> hcat leading <> pretty expr <> hardline
 
 instance Pretty Token where
-    pretty (Identifier t) 
-      | t `elem` [pack "null", pack "true", pack "false"] = text . colorize CYAN $ t
     pretty x@(Integer _) = text . colorize CYAN $ tokenText x
     pretty x = text $ tokenText x
 

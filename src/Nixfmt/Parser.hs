@@ -246,12 +246,16 @@ unshowable :: Parser Term
 unshowable = Unshowable <$>
     symbol TUnshowableOpen <*> unshowables <*> symbol TUnshowableClose
 
+pathOrUnshow :: Parser (Either Term Path)
+pathOrUnshow = (Right <$> path) <|> (Left <$> unshowable)
+
 unshowables :: Parser Unshowables
 unshowables = try (lexeme "primop" >> pure PrimOp)
           <|> try (lexeme "primop-app" >> pure PrimOpApp)
           <|> try (lexeme "repeated" >> pure Repeated)
+          <|> try (lexeme "string" >> pure UString)
           <|> try (lexeme "unknown" >> pure Unknown)
-          <|> try (lexeme "lambda @ " >> Lambda <$> path <*> location)
+          <|> try (lexeme "lambda @ " >> Lambda <$> pathOrUnshow <*> location)
           <|> try (lexeme "derivation " >> Derivation <$> path)
           <|> try (lexeme "error: " >> Error <$> manyP (/= '»'))
 
